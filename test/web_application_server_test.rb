@@ -16,12 +16,21 @@ class HTTPTest < Minitest::Test
   end
 
   def test_it_handles_favicon_request_path
-skip
     response = Faraday.get 'http://127.0.0.1:9292/favicon.ico'
     assert_equal "http/1.1 404 not-found", response.body
   end
 
   def test_it_outputting_diagnostics
-    response = Faraday.get
-    
+    response = Faraday.get 'http://127.0.0.1:9292'
+    assert_equal "<pre>
+    Verb: GET
+    Path: /
+    Protocol: HTTP/1.1
+    Host: 127.0.0.1
+    Port: 9292
+    Origin: 127.0.0.1
+    Accept: */*
+    </pre>", response.body
+  end
+
 end
