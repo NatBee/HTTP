@@ -37,6 +37,10 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     request_lines[6].split(" ")[1]
   end
 
+  def get_word(request_lines)
+    request_lines[0].split("=")[1].split(" ")[0]
+  end
+
   def default_path
     response = "<pre>\n" + "Verb: #{get_verb(request_lines)}\n" +
       "Path: #{get_path(request_lines)}\n" +
@@ -69,6 +73,17 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     response
   end
 
+  def word_search(get_word)
+    dictionary = File.read("/usr/share/dict/words").split("\n")
+    if dictionary.include?(get_word)
+      response = "#{get_word.upcase} is a known word"
+    else
+      response = "#{get_word.upcase} is not a known word"
+    end
+    @aggregate_requests += 1
+    response
+  end
+
   def response
     until @server_exit == true
       client = tcp_server.accept
@@ -95,6 +110,8 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
         response = hello_path
       elsif get_path(request_lines) == "/datetime"
         response = datetime_path
+      elsif get_path(request_lines).include?("/word_search")
+        response = word_search(get_word(request_lines))
       elsif get_path(request_lines) == "/shutdown"
         response = shutdown_path
       end
@@ -113,9 +130,6 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
 
       puts ["Wrote this response:", headers, output].join("\n")
       puts "\nResponse complete, exiting."
+      binding.pry
   end
 end
-
-
-http = HTTP.new
-http.response
