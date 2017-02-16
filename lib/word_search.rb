@@ -12,9 +12,9 @@ class WordSearch
     parser = Parser.new(lines)
     dictionary = File.read("/usr/share/dict/words").split("\n")
     if dictionary.include?(parser.get_input)
-      response = "#{parser.get_input.upcase} is a known word"
+      response = "#{parser.get_input.upcase} is a known word."
     else
-      response = "#{parser.get_input.upcase} is not a known word"
+      response = "#{parser.get_input.upcase} is not a known word."
     end
     response
   end

@@ -68,7 +68,6 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
       client.puts output
 
       @aggregate_requests += 1
-      require 'pry'; binding.pry
     end
 
       client.close
