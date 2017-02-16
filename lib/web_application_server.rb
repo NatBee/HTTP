@@ -14,42 +14,15 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     @guess_count = 0
   end
 
-  def get_verb(request_lines)
-    request_lines[0].split(" ")[0]
-  end
-
-  def get_path(request_lines)
-    request_lines[0].split(" ")[1]
-  end
-
-  def get_protocol(request_lines)
-    request_lines[0].split(" ")[2]
-  end
-
-  def get_host(request_lines)
-    request_lines[1].split(" ")[1].split(":")[0]
-  end
-
-  def get_port(request_lines)
-    request_lines[1].split(" ")[1].split(":")[1]
-  end
-
-  def get_accept(request_lines)
-    request_lines[6].split(" ")[1]
-  end
-
-  def get_input(request_lines)
-    request_lines[0].split("=")[1].split(" ")[0]
-  end
-
   def default_path
-    response = "<pre>\n" + "Verb: #{get_verb(request_lines)}\n" +
-      "Path: #{get_path(request_lines)}\n" +
-      "Protocol: #{get_protocol(request_lines)}\n" +
-      "Host: #{get_host(request_lines)}\n" +
-      "Port: #{get_port(request_lines)}\n" +
-      "Origin: #{get_host(request_lines)}\n" +
-      "Accept: #{get_accept(request_lines)}\n" + "</pre>"
+    parser = Parser.new(request_lines)
+    response = "<pre>\n" + "Verb: #{parser.get_verb}\n" +
+      "Path: #{parser.get_path}\n" +
+      "Protocol: #{parser.get_protocol}\n" +
+      "Host: #{parser.get_host}\n" +
+      "Port: #{parser.get_port}\n" +
+      "Origin: #{parser.get_host}\n" +
+      "Accept: #{parser.get_accept}\n" + "</pre>"
       @aggregate_requests += 1
       response
   end
@@ -75,11 +48,12 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
   end
 
   def word_search(get_input)
+    parser = Parser.new(request_lines)
     dictionary = File.read("/usr/share/dict/words").split("\n")
-    if dictionary.include?(get_input)
-      response = "#{get_input.upcase} is a known word"
+    if dictionary.include?(parser.get_input)
+      response = "#{parser.get_input.upcase} is a known word"
     else
-      response = "#{get_input.upcase} is not a known word"
+      response = "#{parser.get_input.upcase} is not a known word"
     end
     @aggregate_requests += 1
     response
@@ -129,23 +103,27 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
       puts "Got this request:"
       puts request_lines.inspect
 
+      parser = Parser.new(request_lines)
+
 
       puts "Sending response."
-      if get_path(request_lines) == "/"
+      if parser.get_path == "/"
         response = default_path
-      elsif get_path(request_lines) == "/hello"
+      elsif parser.get_path == "/hello"
         response = hello_path
-      elsif get_path(request_lines) == "/datetime"
+      elsif parser.get_path == "/datetime"
         response = datetime_path
-      elsif get_path(request_lines).include?("/word_search")
-        response = word_search(get_input(request_lines))
-      elsif get_path(request_lines) == "/shutdown"
+        # response = Response.new.datetime_response
+      elsif parser.get_path.include?("/word_search")
+        response = word_search(parser.get_input)
+        # response = Response.new.word_search_response(parser.get_input)
+      elsif parser.get_path == "/shutdown"
         response = shutdown_path
-      elsif get_path(request_lines) == "/start_game" && get_verb(request_lines) == "POST"
+      elsif parser.get_path == "/start_game" && parser.get_verb == "POST"
         response = start_game
       # elsif get_path(request_lines).include?("/game")
       #   response = game(get_input(request_lines))
-      elsif get_path(request_lines).include?("/game") && get_verb(request_lines) == "POST"
+    elsif parser.get_path.include?("/game") && parser.get_verb == "POST"
         response = game_response(get_input(request_lines))
 
       end
