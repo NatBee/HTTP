@@ -1,88 +1,18 @@
 require 'socket'
 require './lib/parser'
-require 'pry'
+require './lib/response'
+require './lib/word_search'
+require './lib/game'
 
 class HTTP
 attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_exit
 
   def initialize
     @tcp_server = TCPServer.new(9292)
-    @counter = 0
     @request_lines = []
+    @counter = 0
     @aggregate_requests = 0
     @server_exit = false
-    @guess_count = 0
-  end
-
-  def default_path
-    parser = Parser.new(request_lines)
-    response = "<pre>\n" + "Verb: #{parser.get_verb}\n" +
-      "Path: #{parser.get_path}\n" +
-      "Protocol: #{parser.get_protocol}\n" +
-      "Host: #{parser.get_host}\n" +
-      "Port: #{parser.get_port}\n" +
-      "Origin: #{parser.get_host}\n" +
-      "Accept: #{parser.get_accept}\n" + "</pre>"
-      @aggregate_requests += 1
-      response
-  end
-
-  def hello_path
-    response = "<pre>" + "Hello, World! (#{@counter})" + "</pre>"
-    @counter += 1
-    @aggregate_requests += 1
-    response
-  end
-
-  def datetime_path
-    response = Time.now.strftime("%H:%M%p on %A, %B %d, %Y." )
-    @aggregate_requests += 1
-    response
-  end
-
-  def shutdown_path
-    response = "Total Requests: #{@aggregate_requests}"
-    @aggregate_requests += 1
-    @server_exit = true
-    response
-  end
-
-  def word_search(get_input)
-    parser = Parser.new(request_lines)
-    dictionary = File.read("/usr/share/dict/words").split("\n")
-    if dictionary.include?(parser.get_input)
-      response = "#{parser.get_input.upcase} is a known word"
-    else
-      response = "#{parser.get_input.upcase} is not a known word"
-    end
-    @aggregate_requests += 1
-    response
-  end
-
-  def start_game
-    server_random_number = Random.new
-    @random_num = server_random_number.rand(100)
-    @aggregate_requests += 1
-    response = "Good luck!"
-  end
-
-  # def game(get_input)
-  #
-  # end
-
-  def game_response(get_input)
-    @guess_count += 1
-    @aggregate_requests += 1
-
-    if get_input.to_i < @random_num
-      guess_status = "too low"
-    elsif get_input.to_i > @random_num
-      guess_status = "too high"
-    else
-      guess_status = "correct"
-    end
-
-    response = "#{@guess_count} guesses have been taken. " + "Your guess #{get_input} is #{guess_status}."
   end
 
   def response
@@ -104,27 +34,27 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
       puts request_lines.inspect
 
       parser = Parser.new(request_lines)
-
+      response = Response.new(request_lines)
+      word_search = WordSearch.new(request_lines)
+      game = Game.new(request_lines)
 
       puts "Sending response."
       if parser.get_path == "/"
-        response = default_path
+        response = response.default_path
       elsif parser.get_path == "/hello"
-        response = hello_path
+        @counter += 1
+        response = "<pre>" + "Hello, World! (#{@counter})" + "</pre>" + response.default_path
       elsif parser.get_path == "/datetime"
-        response = datetime_path
-        # response = Response.new.datetime_response
-      elsif parser.get_path.include?("/word_search")
-        response = word_search(parser.get_input)
-        # response = Response.new.word_search_response(parser.get_input)
+        response = response.datetime_path
       elsif parser.get_path == "/shutdown"
-        response = shutdown_path
+        response = "Total Requests: #{@aggregate_requests}" + response.default_path
+        @server_exit = true
+      elsif parser.get_path.include?("/word_search")
+        response = word_search.word_search + response.default_path
       elsif parser.get_path == "/start_game" && parser.get_verb == "POST"
-        response = start_game
-      # elsif get_path(request_lines).include?("/game")
-      #   response = game(get_input(request_lines))
-    elsif parser.get_path.include?("/game") && parser.get_verb == "POST"
-        response = game_response(get_input(request_lines))
+        response = game.start_game + response.default_path
+      elsif parser.get_path.include?("/game") && parser.get_verb == "POST"
+        response = game.game_response + response.default_path
 
       end
 
@@ -136,6 +66,9 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
                   "content-length: #{output.length}\r\n\r\n"].join("\r\n")
       client.puts headers
       client.puts output
+
+      @aggregate_requests += 1
+      require 'pry'; binding.pry
     end
 
       client.close

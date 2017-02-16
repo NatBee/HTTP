@@ -1,73 +1,33 @@
 gem 'minitest'
 require 'minitest/autorun'
 require 'minitest/emoji'
-require 'faraday'
-require 'pry'
-
+require './lib/response'
 
 class ResponseTest < Minitest::Test
-i_suck_and_my_tests_are_order_dependant!
-  def test_a_path_is_outputing_correct_response_path_root
-    response = Faraday.get 'http://127.0.0.1:9292'
+
+  def test_it_outputs_diagnostics
+    outputting_diagnostics = ["GET / HTTP/1.1",
+  "Host: 127.0.0.1:9292",
+  "Connection: keep-alive",
+  "Cache-Control: no-cache",
+  "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36",
+  "Postman-Token: ee734471-eabf-1a5b-6b62-70d917fff4a5",
+  "Accept: */*",
+  "Accept-Encoding: gzip, deflate, sdch, br",
+  "Accept-Language: en-US,en;q=0.8"]
+    response = Response.new(outputting_diagnostics)
     assert_equal "<pre>
-    Verb: GET
-    Path: /
-    Protocol: HTTP/1.1
-    Host: 127.0.0.1
-    Port: 9292
-    Origin: 127.0.0.1
-    Accept: */*
-    </pre>", response.body
+Verb: GET
+Path: /
+Protocol: HTTP/1.1
+Host: 127.0.0.1
+Port: 9292
+Origin: 127.0.0.1
+Accept: */*
+</pre>", response.default_path
   end
 
-  def test_b_path_is_outputing_correct_response_path_root_hello
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal "<html><head></head><body><pre>Hello, World! (0)</pre></body></html>", response.body
+  def test_it_tells_current_time
+
   end
-
-  def test_c_root_hello_is_incrementing_only_with_root_hello_request
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal "<html><head></head><body><pre>Hello, World! (0)</pre></body></html>", response.body
-
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal "<pre>
-    Verb: GET
-    Path: /
-    Protocol: HTTP/1.1
-    Host: 127.0.0.1
-    Port: 9292
-    Origin: 127.0.0.1
-    Accept: */*
-    </pre>", response.body
-
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal "<html><head></head><body><pre>Hello, World! (1)</pre></body></html>", response.body
-  end
-
-  def test_d_path_is_outputing_correct_response_path_root_datetime
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal "11:07AM on Tuesday, February 14, 2017", response.body
-  end
-
-  def test_e_path_is_outputing_correct_response_path_root_shutdown
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal “Total Requests: 12”, response.body
-  end
-
-  def test_f_it_counts_all_requests
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal “Total Requests: 12”, response.body
-  end
-
-  def test_g_word_search_is_outputing_correct_response_for_DOG
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal “DOG is a known word”, response.body
-  end
-
-  def test_h_word_search_is_outputing_correct_response_for_OOH
-    response = Faraday.get 'http://127.0.0.1:9292'
-    assert_equal “OOH is not a known word”, response.body
-  end
-
-
 end
