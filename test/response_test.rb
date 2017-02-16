@@ -5,7 +5,7 @@ require 'faraday'
 require 'pry'
 
 
-class PathTest < Minitest::Test
+class ResponseTest < Minitest::Test
 i_suck_and_my_tests_are_order_dependant!
   def test_a_path_is_outputing_correct_response_path_root
     response = Faraday.get 'http://127.0.0.1:9292'

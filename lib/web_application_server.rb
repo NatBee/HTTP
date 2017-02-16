@@ -1,5 +1,5 @@
 require 'socket'
-require './lib/path'
+require './lib/parser'
 require 'pry'
 
 class HTTP
@@ -11,6 +11,7 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     @request_lines = []
     @aggregate_requests = 0
     @server_exit = false
+    @guess_count = 0
   end
 
   def get_verb(request_lines)
@@ -37,7 +38,7 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     request_lines[6].split(" ")[1]
   end
 
-  def get_word(request_lines)
+  def get_input(request_lines)
     request_lines[0].split("=")[1].split(" ")[0]
   end
 
@@ -73,15 +74,41 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
     response
   end
 
-  def word_search(get_word)
+  def word_search(get_input)
     dictionary = File.read("/usr/share/dict/words").split("\n")
-    if dictionary.include?(get_word)
-      response = "#{get_word.upcase} is a known word"
+    if dictionary.include?(get_input)
+      response = "#{get_input.upcase} is a known word"
     else
-      response = "#{get_word.upcase} is not a known word"
+      response = "#{get_input.upcase} is not a known word"
     end
     @aggregate_requests += 1
     response
+  end
+
+  def start_game
+    server_random_number = Random.new
+    @random_num = server_random_number.rand(100)
+    @aggregate_requests += 1
+    response = "Good luck!"
+  end
+
+  # def game(get_input)
+  #
+  # end
+
+  def game_response(get_input)
+    @guess_count += 1
+    @aggregate_requests += 1
+
+    if get_input.to_i < @random_num
+      guess_status = "too low"
+    elsif get_input.to_i > @random_num
+      guess_status = "too high"
+    else
+      guess_status = "correct"
+    end
+
+    response = "#{@guess_count} guesses have been taken. " + "Your guess #{get_input} is #{guess_status}."
   end
 
   def response
@@ -111,9 +138,16 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
       elsif get_path(request_lines) == "/datetime"
         response = datetime_path
       elsif get_path(request_lines).include?("/word_search")
-        response = word_search(get_word(request_lines))
+        response = word_search(get_input(request_lines))
       elsif get_path(request_lines) == "/shutdown"
         response = shutdown_path
+      elsif get_path(request_lines) == "/start_game" && get_verb(request_lines) == "POST"
+        response = start_game
+      # elsif get_path(request_lines).include?("/game")
+      #   response = game(get_input(request_lines))
+      elsif get_path(request_lines).include?("/game") && get_verb(request_lines) == "POST"
+        response = game_response(get_input(request_lines))
+
       end
 
       output = "#{response}"
@@ -130,6 +164,5 @@ attr_reader :tcp_server, :counter, :request_lines, :aggregate_requests, :server_
 
       puts ["Wrote this response:", headers, output].join("\n")
       puts "\nResponse complete, exiting."
-      binding.pry
   end
 end
